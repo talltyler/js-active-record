@@ -41,7 +41,6 @@ class ActiveRecord  {
     instance.fireStateActionsFor('beforeCreate',object);
     Object.assign(instance,object);
     if(instance.persistance){
-      console.log(instance.persistance);
       instance.persistance.create(instance);
     }
     instance.fireStateActionsFor('afterCreate',object);
@@ -71,10 +70,6 @@ class ActiveRecord  {
       }
       this.fireStateActionsFor('afterSave',options);
     }
-  }
-
-  valueOf(){
-    return 'here';
   }
 }
 
