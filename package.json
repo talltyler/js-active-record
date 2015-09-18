@@ -1,0 +1,16 @@
+{
+  "name": "proxies",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "component-type": "^1.1.0",
+    "harmony-proxy": "0.0.2",
+    "is-blank": "0.0.1"
+  }
+}
