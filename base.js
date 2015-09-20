@@ -3,7 +3,7 @@
 var type = require('component-type');
 var isBlank = require('is-blank');
 
-class Validator {
+class Base {
   /**
   * if, unless : function returning boolean
   * type : date, object, null, undefined, string, boolean, boolean, number, function, regexp, arguments, array, element, nan, error
@@ -82,13 +82,12 @@ class Validator {
     obj[prop] = value;
   }
 
-  /*
-  get(obj, prop){
-    console.log('get', prop);
-    return obj[prop];
-  }*/
 
-  
+  get(obj, prop){
+    return obj[prop];
+  }
+
+
 }
 
-module.exports = Validator;
+module.exports = Base;

@@ -2,6 +2,7 @@
 
 var Base = require('./base');
 var Proxy = require('harmony-proxy');
+var StringUtils = require('./string_utils');
 
 class ActiveRecord  {
   constructor(){
@@ -32,18 +33,18 @@ class ActiveRecord  {
 
   static establishConnection(options){
     var Adapter = require('./lib/adapters/'+options.adapter+'_adapter.js');
-    ActiveRecord.prototype.persistance = new Adapter();
+    ActiveRecord.persistance = new Adapter();
   }
 
-  static create(object){
+  static create(props){
     var instance = new this();
     var proxy = new Proxy(instance,instance.base);
-    instance.fireStateActionsFor('beforeCreate',object);
-    Object.assign(instance,object);
-    if(instance.persistance){
-      instance.persistance.create(instance);
+    instance.fireStateActionsFor('beforeCreate',props);
+    if(this.persistance){
+      this.persistance.create(instance,props);
     }
-    instance.fireStateActionsFor('afterCreate',object);
+    createFindByMethod(this,'id');
+    instance.fireStateActionsFor('afterCreate',props);
     return proxy;
   }
 
@@ -62,15 +63,38 @@ class ActiveRecord  {
     if(!this.errors.length){
       this.fireStateActionsFor('beforeSave',options);
       // TODO: validate presence and allow_blank
-      if(this.persistance){
-        this.persistance.update(this);
+      if(this.constructor.persistance){
+        this.constructor.persistance.update(this);
       }
       if(!this.errors.length){
         this.changes = {};
       }
       this.fireStateActionsFor('afterSave',options);
     }
+    return !this.errors.length;
   }
+
+  addIndex(column){
+    if(this.constructor.persistance){
+      this.constructor.persistance.addIndex(this, column);
+    }
+    createFindByMethod(this.constructor,column);
+  }
+
+  static find(where){
+    if(this.persistance){
+      return this.persistance.find(this.name,where);
+    }
+  }
+
 }
+
+var createFindByMethod = function(Model,column){
+  Model['findBy' + StringUtils.toTitleCase(column)] = function(value, where){
+    where = where || {};
+    where[column] = value;
+    return Model.find(where);
+  };
+};
 
 module.exports = ActiveRecord;
