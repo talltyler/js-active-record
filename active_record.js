@@ -3,32 +3,22 @@
 var Base = require('./base');
 var Proxy = require('harmony-proxy');
 var StringUtils = require('./string_utils');
+var Symbol = require('es6-symbol');
+var pluralize = require('pluralize');
+
+var _base = Symbol('base');
+var _changes = Symbol('changes');
+var _validations = Symbol('validations');
+var _associations = Symbol('associations');
 
 class ActiveRecord  {
   constructor(){
     var self = this;
-    this.changes = {};
+    this[_changes] = {};
+    this[_validations] = {};
+    this[_associations] = {all:[],belongsTo:[],hasMany:[],hasOne:[],hasAndBelongsToMany:[]};
+    this[_base] = new Base(this[_validations]);
     this.errors = [];
-    this.validations = {};
-    this.base = new Base();
-    this.beforeAfterMethods = {};
-    var beforeAfterMethodNames = ['beforeCreate', 'afterCreate', 'beforeSave', 'afterSave'];
-    beforeAfterMethodNames.forEach(function(method){
-      self[method] = function(action){
-        if(!self.beforeAfterMethods[method]){
-          self.beforeAfterMethods[method] = [];
-        }
-        self.beforeAfterMethods[method].push(action);
-      }
-    });
-  }
-
-  fireStateActionsFor(method,options){
-    if(this.beforeAfterMethods[method]){
-      this.beforeAfterMethods[method].forEach(function(action){
-        action(options);
-      });
-    }
   }
 
   static establishConnection(options){
@@ -38,14 +28,42 @@ class ActiveRecord  {
 
   static create(props){
     var instance = new this();
-    var proxy = new Proxy(instance,instance.base);
-    instance.fireStateActionsFor('beforeCreate',props);
+    var proxy = new Proxy(instance,instance[_base]);
     if(this.persistance){
-      this.persistance.create(instance,props);
+      this.persistance.create(instance,instance[_changes],props);
     }
     createFindByMethod(this,'id');
-    instance.fireStateActionsFor('afterCreate',props);
     return proxy;
+  }
+
+  belongsTo(Model,options){
+    var name = StringUtils.toSnakeCase(Model.name);
+    let column = name+'Id';
+    let a = {model:Model,options:options,column:column,type:'belongsTo'};
+    this[_associations].belongsTo.push(a);
+    this[_associations].all.push(a);
+  }
+
+  hasMany(Model,options){
+    let column = pluralize(StringUtils.toSnakeCase(Model.name));
+    let a = {model:Model,options:options,column:column,type:'hasMany'};
+    this[_associations].hasMany.push(a);
+    this[_associations].all.push(a);
+    this[column] = [];
+  }
+
+  hasOne(Model,options){
+    let column = StringUtils.toSnakeCase(Model.name);
+    let a = {model:Model,options:options,column:column,type:'hasOne'};
+    this[_associations].hasMany.push(a);
+    this[_associations].all.push(a);
+  }
+
+  hasAndBelongsToMany(Model,options){
+    let column = pluralize(StringUtils.toSnakeCase(Model.name));
+    let a = {model:Model,options:options,column:column,type:'hasAndBelongsToMany'};
+    this[_associations].hasAndBelongsToMany.push(a);
+    this[_associations].all.push(a);
   }
 
   validate(field,options) {
@@ -55,23 +73,25 @@ class ActiveRecord  {
         self.validate(item,options);
       })
     }else{
-      this.validations[field] = options;
+      this[_validations][field] = options;
     }
   }
 
   save(options){
     if(!this.errors.length){
-      this.fireStateActionsFor('beforeSave',options);
       // TODO: validate presence and allow_blank
       if(this.constructor.persistance){
-        this.constructor.persistance.update(this);
+        this.constructor.persistance.update(this,this[_changes],null);
       }
       if(!this.errors.length){
-        this.changes = {};
+        this[_changes] = {};
       }
-      this.fireStateActionsFor('afterSave',options);
     }
     return !this.errors.length;
+  }
+
+  changeProp(prop,value){
+    this[prop] = this[_changes][prop] = value;
   }
 
   addIndex(column){

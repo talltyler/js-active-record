@@ -3,7 +3,13 @@
 var type = require('component-type');
 var isBlank = require('is-blank');
 
+var _validations;
+
 class Base {
+
+  constructor(validations){
+    _validations = validations;
+  }
   /**
   * if, unless : function returning boolean
   * type : date, object, null, undefined, string, boolean, boolean, number, function, regexp, arguments, array, element, nan, error
@@ -17,8 +23,8 @@ class Base {
   * uniqueness * not currently supported
   */
   set(obj, prop, value){
-    if(obj.validations && obj.validations[prop]){
-      var validation = obj.validations[prop];
+    if(_validations[prop]){
+      var validation = _validations[prop];
       var hasIf = validation.hasOwnProperty('if');
       var hasUnless = validation.hasOwnProperty('unless');
       var getMessage = function(key,messageString){
@@ -76,10 +82,7 @@ class Base {
         }
       }
     }
-    // so that we know what to update
-    obj.changes[prop] = value;
-    // The default behavior to store the value
-    obj[prop] = value;
+    obj.changeProp(prop,value);
   }
 
 
