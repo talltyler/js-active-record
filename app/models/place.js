@@ -1,8 +1,6 @@
 'use strict';
 
-var ActiveRecord = require('./../../active_record');
-
-class Place extends ActiveRecord {
+class Place extends require('active_record') {
   constructor(){
     super();
     this.belongsTo('user');

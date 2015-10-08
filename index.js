@@ -1,9 +1,13 @@
 'use strict';
 
-var User = require('./app/models/user');
-var Place = require('./app/models/place');
+// configure
+var appPath = require('app-module-path');
+appPath.addPath(__dirname);
+appPath.addPath(__dirname+'/app/models');
+require('active_record').establishConnection({adapter:'memory'});
 
-require('./active_record').establishConnection({adapter:'memory'});
+var User = require('user');
+var Place = require('place');
 
 var brooklyn = Place.create();
 brooklyn.name = 'brooklyn';
