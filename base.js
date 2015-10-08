@@ -87,6 +87,7 @@ class Base {
 
 
   get(obj, prop){
+    // TODO: look on the persistance layer if the data isn't on the object
     return obj[prop];
   }
 

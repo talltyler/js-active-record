@@ -4,7 +4,7 @@ var Base = require('./base');
 var Proxy = require('harmony-proxy');
 var StringUtils = require('./string_utils');
 var Symbol = require('es6-symbol');
-var pluralize = require('pluralize');
+var Inflector = require('inflected');
 
 var _base = Symbol('base');
 var _changes = Symbol('changes');
@@ -36,31 +36,45 @@ class ActiveRecord  {
     return proxy;
   }
 
-  belongsTo(Model,options){
-    var name = StringUtils.toSnakeCase(Model.name);
+  static find(where){
+    if(this.persistance){
+      return this.persistance.find(this.name,where);
+    }
+  }
+
+  belongsTo(model,options){
+    // TODO: should have a better way of finding models
+    var Model = require('./app/models/'+StringUtils.toUnderscore(model));
+    var name = StringUtils.toSnakeCase(model);
     let column = name+'Id';
     let a = {model:Model,options:options,column:column,type:'belongsTo'};
     this[_associations].belongsTo.push(a);
     this[_associations].all.push(a);
   }
 
-  hasMany(Model,options){
-    let column = pluralize(StringUtils.toSnakeCase(Model.name));
+  hasMany(model,options){
+    // TODO: should have a better way of finding models
+    var Model = require('./app/models/'+StringUtils.toUnderscore(Inflector.singularize(model)));
+    let column = model;
     let a = {model:Model,options:options,column:column,type:'hasMany'};
     this[_associations].hasMany.push(a);
     this[_associations].all.push(a);
     this[column] = [];
   }
 
-  hasOne(Model,options){
-    let column = StringUtils.toSnakeCase(Model.name);
+  hasOne(model,options){
+    // TODO: should have a better way of finding models
+    var Model = require('./app/models/'+StringUtils.toUnderscore(model));
+    let column = model;
     let a = {model:Model,options:options,column:column,type:'hasOne'};
     this[_associations].hasMany.push(a);
     this[_associations].all.push(a);
   }
 
-  hasAndBelongsToMany(Model,options){
-    let column = pluralize(StringUtils.toSnakeCase(Model.name));
+  hasAndBelongsToMany(model,options){
+    // TODO: should have a better way of finding models
+    var Model = require('./app/models/'+StringUtils.toUnderscore(Inflector.singularize(model)));
+    let column = model;
     let a = {model:Model,options:options,column:column,type:'hasAndBelongsToMany'};
     this[_associations].hasAndBelongsToMany.push(a);
     this[_associations].all.push(a);
@@ -99,12 +113,6 @@ class ActiveRecord  {
       this.constructor.persistance.addIndex(this, column);
     }
     createFindByMethod(this.constructor,column);
-  }
-
-  static find(where){
-    if(this.persistance){
-      return this.persistance.find(this.name,where);
-    }
   }
 
 }

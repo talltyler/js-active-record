@@ -12,6 +12,7 @@
     "component-type": "^1.1.0",
     "es6-symbol": "^2.0.1",
     "harmony-proxy": "0.0.2",
+    "inflected": "^1.1.6",
     "is-blank": "0.0.1",
     "pluralize": "^1.2.1"
   }

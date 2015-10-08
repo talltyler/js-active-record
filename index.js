@@ -1,24 +1,9 @@
 'use strict';
 
-var ActiveRecord = require('./active_record');
-ActiveRecord.establishConnection({adapter:'memory'});
+var User = require('./app/models/user');
+var Place = require('./app/models/place');
 
-class User extends ActiveRecord {
-  constructor(){
-    super();
-    this.hasMany(Place);
-    this.addIndex('email');
-    this.validate('email',{type:'string', allow_blank:false, length:{min:6,max:128},
-      regex:/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}/i});
-  }
-}
-
-class Place extends ActiveRecord {
-  constructor(){
-    super();
-    this.belongsTo(User);
-  }
-}
+require('./active_record').establishConnection({adapter:'memory'});
 
 var brooklyn = Place.create();
 brooklyn.name = 'brooklyn';
