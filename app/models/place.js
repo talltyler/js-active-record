@@ -3,8 +3,9 @@
 class Place extends require('active_record') {
   constructor(){
     super();
-    this.belongsTo('user');
   }
 }
+
+Place.belongsTo('user');
 
 module.exports = Place;

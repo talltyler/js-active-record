@@ -11,13 +11,12 @@ var _changes = Symbol('changes');
 var _validations = Symbol('validations');
 var _associations = Symbol('associations');
 
+var _defaultAssociations = {all:[],belongsTo:[],hasMany:[],hasOne:[],hasAndBelongsToMany:[]}
+
 class ActiveRecord  {
   constructor(){
     var self = this;
     this[_changes] = {};
-    this[_validations] = {};
-    this[_associations] = {all:[],belongsTo:[],hasMany:[],hasOne:[],hasAndBelongsToMany:[]};
-    this[_base] = new Base(this[_validations]);
     this.errors = [];
   }
 
@@ -28,7 +27,9 @@ class ActiveRecord  {
 
   static create(props){
     var instance = new this();
-    var proxy = new Proxy(instance,instance[_base]);
+    var proxy = new Proxy(instance, new Base(
+      this[_validations] || {},
+      this[_associations] || _defaultAssociations));
     if(this.persistance){
       this.persistance.create(instance,instance[_changes],props);
     }
@@ -42,9 +43,9 @@ class ActiveRecord  {
     }
   }
 
-  belongsTo(model,options){
-    // TODO: should have a better way of finding models
-    var Model = require('./app/models/'+StringUtils.toUnderscore(model));
+  static belongsTo(model,options){
+    this[_associations] = this[_associations] || _defaultAssociations;
+    var Model = require(StringUtils.toUnderscore(model));
     var name = StringUtils.toSnakeCase(model);
     let column = name+'Id';
     let a = {model:Model,options:options,column:column,type:'belongsTo'};
@@ -52,35 +53,35 @@ class ActiveRecord  {
     this[_associations].all.push(a);
   }
 
-  hasMany(model,options){
-    // TODO: should have a better way of finding models
-    var Model = require('./app/models/'+StringUtils.toUnderscore(Inflector.singularize(model)));
+  static hasMany(model,options){
+    this[_associations] = this[_associations] || _defaultAssociations;
+    var Model = require(StringUtils.toUnderscore(Inflector.singularize(model)));
     let column = model;
     let a = {model:Model,options:options,column:column,type:'hasMany'};
     this[_associations].hasMany.push(a);
     this[_associations].all.push(a);
-    this[column] = [];
   }
 
-  hasOne(model,options){
-    // TODO: should have a better way of finding models
-    var Model = require('./app/models/'+StringUtils.toUnderscore(model));
+  static hasOne(model,options){
+    this[_associations] = this[_associations] || _defaultAssociations;
+    var Model = require(StringUtils.toUnderscore(model));
     let column = model;
     let a = {model:Model,options:options,column:column,type:'hasOne'};
     this[_associations].hasMany.push(a);
     this[_associations].all.push(a);
   }
 
-  hasAndBelongsToMany(model,options){
-    // TODO: should have a better way of finding models
-    var Model = require('./app/models/'+StringUtils.toUnderscore(Inflector.singularize(model)));
+  static hasAndBelongsToMany(model,options){
+    this[_associations] = this[_associations] || _defaultAssociations;
+    var Model = require(StringUtils.toUnderscore(Inflector.singularize(model)));
     let column = model;
     let a = {model:Model,options:options,column:column,type:'hasAndBelongsToMany'};
     this[_associations].hasAndBelongsToMany.push(a);
     this[_associations].all.push(a);
   }
 
-  validate(field,options) {
+  static validate(field,options) {
+    this[_validations] = this[_validations] || {};
     if(Array.isArray(field)){
       var self = this;
       field.forEach(function(item){
@@ -93,6 +94,7 @@ class ActiveRecord  {
 
   save(options){
     if(!this.errors.length){
+      //console.log(this[_changes])
       // TODO: validate presence and allow_blank
       if(this.constructor.persistance){
         this.constructor.persistance.update(this,this[_changes],null);
@@ -105,14 +107,15 @@ class ActiveRecord  {
   }
 
   changeProp(prop,value){
+    //console.log(prop, value)
     this[prop] = this[_changes][prop] = value;
   }
 
-  addIndex(column){
-    if(this.constructor.persistance){
-      this.constructor.persistance.addIndex(this, column);
+  static addIndex(column){
+    if(this.persistance){
+      this.persistance.addIndex(this, column);
     }
-    createFindByMethod(this.constructor,column);
+    createFindByMethod(this,column);
   }
 
 }

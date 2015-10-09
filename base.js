@@ -3,12 +3,11 @@
 var type = require('component-type');
 var isBlank = require('is-blank');
 
-var _validations;
-
 class Base {
 
-  constructor(validations){
-    _validations = validations;
+  constructor(validations,associations){
+    this._validations = validations;
+    this._associations = associations;
   }
   /**
   * if, unless : function returning boolean
@@ -23,8 +22,8 @@ class Base {
   * uniqueness * not currently supported
   */
   set(obj, prop, value){
-    if(_validations[prop]){
-      var validation = _validations[prop];
+    if(this._validations[prop]){
+      var validation = this._validations[prop];
       var hasIf = validation.hasOwnProperty('if');
       var hasUnless = validation.hasOwnProperty('unless');
       var getMessage = function(key,messageString){
@@ -86,9 +85,20 @@ class Base {
   }
 
 
-  get(obj, prop){
+  get(obj, column){
     // TODO: look on the persistance layer if the data isn't on the object
-    return obj[prop];
+    
+    if(!obj[column]){
+      var foundColumns = this._associations.all.filter(function(association){
+        return column === association.column;
+      });
+      if (foundColumns.length && (foundColumns[0].type === 'hasMany' ||
+        foundColumns[0].type === 'hasAndBelongsToMany')){
+        obj[column] = [];
+      }
+
+    }
+    return obj[column];
   }
 
 

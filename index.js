@@ -1,19 +1,17 @@
 'use strict';
 
-// configure
-var appPath = require('app-module-path');
-appPath.addPath(__dirname);
-appPath.addPath(__dirname+'/app/models');
-require('active_record').establishConnection({adapter:'memory'});
+require('./app_config');
 
 var User = require('user');
 var Place = require('place');
 
-var brooklyn = Place.create();
-brooklyn.name = 'brooklyn';
+var home = Place.create();
+home.name = 'brooklyn';
+
 var tyler = User.create();
 tyler.email = 'asdf@asdf.com';
-tyler.places.push(brooklyn);
+tyler.places.push(home);
+
 if(tyler.save()){
   console.log(tyler);
   var asdf = User.findByEmail('asdf@asdf.com');
