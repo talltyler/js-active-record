@@ -10,15 +10,13 @@ var _base = Symbol('base');
 var _changes = Symbol('changes');
 var _validations = Symbol('validations');
 var _associations = Symbol('associations');
+var _proxy = Symbol('proxy');
+var _instance = Symbol('instance');
 
 var _defaultAssociations = {all:[],belongsTo:[],hasMany:[],hasOne:[],hasAndBelongsToMany:[]}
 
 class ActiveRecord  {
-  constructor(){
-    var self = this;
-    this[_changes] = {};
-    this.errors = [];
-  }
+  constructor(){}
 
   static establishConnection(options){
     var Adapter = require('./lib/adapters/'+options.adapter+'_adapter.js');
@@ -27,12 +25,15 @@ class ActiveRecord  {
 
   static create(props){
     var instance = new this();
+    instance[_changes] = {};
     var proxy = new Proxy(instance, new Base(
       this[_validations] || {},
       this[_associations] || _defaultAssociations));
     if(this.persistance){
       this.persistance.create(instance,instance[_changes],props);
     }
+    instance[_proxy] = proxy;
+    proxy[_instance] = instance;
     createFindByMethod(this,'id');
     return proxy;
   }
@@ -92,9 +93,15 @@ class ActiveRecord  {
     }
   }
 
+  static addIndex(column){
+    if(this.persistance){
+      this.persistance.addIndex(this, column);
+    }
+    createFindByMethod(this,column);
+  }
+
   save(options){
     if(!this.errors.length){
-      //console.log(this[_changes])
       // TODO: validate presence and allow_blank
       if(this.constructor.persistance){
         this.constructor.persistance.update(this,this[_changes],null);
@@ -107,15 +114,7 @@ class ActiveRecord  {
   }
 
   changeProp(prop,value){
-    //console.log(prop, value)
     this[prop] = this[_changes][prop] = value;
-  }
-
-  static addIndex(column){
-    if(this.persistance){
-      this.persistance.addIndex(this, column);
-    }
-    createFindByMethod(this,column);
   }
 
 }

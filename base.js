@@ -30,52 +30,58 @@ class Base {
         var message = obj.constructor.name + '.prototype.' + prop + ' was expected to be ' + messageString + ' ' + value;
         return ((validation.message && validation.message[key]) ? validation.message[key] : validation.message) || message;
       };
+      var addError = function(key,message){
+        if(!obj.errors) {
+          obj.errors = [];
+        }
+        obj.errors.push(getMessage(key,message));
+      };
       if(((hasIf && validation.if(obj, prop, value)) || !hasIf) ||
         ((hasUnless && validation.unless(obj, prop, value)) || !hasUnless)){
 
         if(isBlank(value) && (validation.hasOwnProperty('allow_blank') && validation.allow_blank) ){
-          obj.errors.push(getMessage('allow_blank','not blank but recieved'));
+          addError('allow_blank','not blank but recieved');
         }
 
         if(validation.type && type(value) !== validation.type){
-          obj.errors.push(getMessage('type','of type ' + validation + ' but recieved'));
+          addError('type','of type ' + validation + ' but recieved');
         }
 
         if(!!validation.presence && !value && value !== 0){
-          obj.errors.push(getMessage('presence','set but recieved'));
+          addError('presence','set but recieved');
         }
 
         if(validation.numericality && !isNaN(value)){
-          obj.errors.push(getMessage('numericality','a number but recieved'));
+          addError('numericality','a number but recieved');
         }
 
         if(validation.regex && !validation.regex.test(value)){
-          obj.errors.push(getMessage('regex','to match regex but recieved'));
+          addError('regex','to match regex but recieved');
         }
 
         if(validation.function && !validation.function(obj, prop, value)){
-          obj.errors.push(getMessage('function','a validation function to return true'));
+          addError('function','a validation function to return true');
         }
 
         var valueLength = type(value) === 'number' ? value : value.length;
         if(validation.length){
           if(typeof validation.length === 'number' && validation.length !== valueLength){
-            obj.errors.push(getMessage('length',validation.length + ' but was'));
+            addError('length',validation.length + ' but was');
           }else{
             if(validation.length.hasOwnProperty('is') && validation.length.is !== valueLength){
-              obj.errors.push(getMessage('length',validation.length.is + ' but was'));
+              addError('length',validation.length.is + ' but was');
             }
 
             var min = validation.length.minimum || validation.length.min;
             if(min && min >= valueLength){
               // TODO: take into account other keys
-              obj.errors.push(getMessage('min','more than ' + min + ' but was to small'));
+              addError('min','more than ' + min + ' but was to small');
             }
 
             var max = validation.length.maximum || validation.length.max;
             if(max && max <= valueLength){
               // TODO: take into account other keys
-              obj.errors.push(getMessage('min','less than ' + max + ' but was to large'));
+              addError('min','less than ' + max + ' but was to large');
             }
           }
         }
@@ -87,16 +93,18 @@ class Base {
 
   get(obj, column){
     // TODO: look on the persistance layer if the data isn't on the object
-    
     if(!obj[column]){
-      var foundColumns = this._associations.all.filter(function(association){
-        return column === association.column;
-      });
-      if (foundColumns.length && (foundColumns[0].type === 'hasMany' ||
-        foundColumns[0].type === 'hasAndBelongsToMany')){
-        obj[column] = [];
+      if(column === 'errors'){
+        return [];
+      }else{
+        var foundColumns = this._associations.all.filter(function(association){
+          return column === association.column;
+        });
+        if (foundColumns.length && (foundColumns[0].type === 'hasMany' ||
+          foundColumns[0].type === 'hasAndBelongsToMany')){
+          obj[column] = [];
+        }
       }
-
     }
     return obj[column];
   }

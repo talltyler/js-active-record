@@ -1,10 +1,6 @@
 'use strict';
 
-class User extends require('active_record') {
-  constructor(){
-    super();
-  }
-}
+class User extends require('active_record') {}
 
 User.hasMany('places');
 User.addIndex('email');

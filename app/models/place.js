@@ -1,10 +1,6 @@
 'use strict';
 
-class Place extends require('active_record') {
-  constructor(){
-    super();
-  }
-}
+class Place extends require('active_record') {}
 
 Place.belongsTo('user');
 
